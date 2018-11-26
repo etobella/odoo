@@ -746,6 +746,15 @@ class UsersImplied(models.Model):
 class GroupsView(models.Model):
     _inherit = 'res.groups'
 
+    app_order = fields.Integer(
+        store=True, compute='_compute_app_order'
+    )
+
+    @api.depends('category_id')
+    def _compute_app_order(self):
+        for r in self.mapped('category_id'):
+            r._compute_kind_view()
+
     @api.model
     def create(self, values):
         user = super(GroupsView, self).create(values)
@@ -841,6 +850,7 @@ class GroupsView(models.Model):
             reverse implication order.
         """
         def linearize(app, gs):
+            return (app, app.kind_view, gs.sorted(key='app_order'))
             # determine sequence order: a group appears after its implied groups
             order = {g: len(g.trans_implied_ids & gs) for g in gs}
             # check whether order is total, i.e., sequence orders are distinct
@@ -993,6 +1003,35 @@ class UsersView(models.Model):
                         'selectable': False,
                     }
         return res
+
+
+class ModuleCategory(models.Model):
+    _inherit = 'ir.module.category'
+
+    kind_view = fields.Selection([
+        ('selection', 'Selection'),
+        ('boolean', 'Boolean'),
+    ], store=True, compute='_compute_kind_view')
+    group_ids = fields.One2many(
+        'res.groups',
+        inverse_name='category_id'
+    )
+
+    @api.depends('group_ids')
+    def _compute_kind_view(self):
+        for app in self:
+            gs = app.group_ids
+            order = {g: len(g.trans_implied_ids & gs) for g in gs}
+            # check whether order is total, i.e., sequence orders are distinct
+            if len(set(order.values())) == len(gs):
+                app.kind_view = 'selection'
+                for rec in gs:
+                    rec.app_order = order.get(rec)
+            else:
+                app.kind_view = 'boolean'
+                for rec in gs:
+                    rec.app_order = rec.id
+
 
 #----------------------------------------------------------
 # change password wizard
