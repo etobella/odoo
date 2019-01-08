@@ -356,6 +356,7 @@ class Module(models.Model):
         demo = False
 
         for module in self:
+            _logger.info('Checking %s' % module.name)
             # determine dependency modules to update/others
             update_mods, ready_mods = self.browse(), self.browse()
             for dep in module.dependencies_id:
