@@ -531,7 +531,7 @@ var LineRenderer = Widget.extend(FieldManagerMixin, {
         }], {
             account_id: {
                 string: _t("Account"),
-                domain: [['deprecated', '=', false]],
+                domain: [['deprecated', '=', false], ['company_id', '=', state.st_line.company_id]],
             },
             label: {string: _t("Label")},
             amount: {string: _t("Account")}
