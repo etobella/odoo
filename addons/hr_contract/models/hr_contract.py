@@ -128,7 +128,12 @@ class Contract(models.Model):
 
             domain = expression.AND([domain, start_domain, end_domain])
             if self.search_count(domain):
-                raise ValidationError(_('An employee can only have one contract at the same time. (Excluding Draft and Cancelled contracts)'))
+                raise ValidationError(
+                    _(
+                        'An employee can only have one contract at the same time. (Excluding Draft and Cancelled contracts).\n\nEmployee: %(employee_name)s',
+                        employee_name=contract.employee_id.name
+                    )
+                )
 
     @api.constrains('date_start', 'date_end')
     def _check_dates(self):
